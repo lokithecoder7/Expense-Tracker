@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ExpenseAI — Personal Finance Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo">💸 ExpenseAI</div>
+      <nav>
+        <a href="#" class="nav-item active" data-tab="dashboard">📊 Dashboard</a>
+        <a href="#" class="nav-item" data-tab="transactions">📋 Transactions</a>
+        <a href="#" class="nav-item" data-tab="budget">🎯 Budget</a>
+        <a href="#" class="nav-item" data-tab="import">📥 Import</a>
+        <a href="#" class="nav-item" data-tab="finai">✨ FinAI</a>
+      </nav>
+      <div class="month-switcher" id="monthSwitcher">
+      </div>
+      <div id="saveStatus" style="font-size:0.72rem;text-align:center;padding:6px 8px;border-radius:6px;margin:6px 8px 0;cursor:pointer" onclick="connectDataFolder()">📁 Enable auto-save</div>
+      <button class="backup-btn" onclick="exportBackup()" title="Download full backup">💾 Backup</button>
+      <div id="sidebarMonth" style="display:none"></div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+      <!-- DASHBOARD TAB -->
+      <section id="tab-dashboard" class="tab active">
+        <div class="page-header">
+          <h1>Welcome 👋</h1>
+          <span class="badge" id="monthBadge">January 2026</span>
+        </div>
+
+        <!-- SUMMARY CARDS -->
+        <div class="cards">
+          <!-- Row 1: Money flow -->
+          <div class="card green">
+            <div class="card-label">Income</div>
+            <div class="card-value" id="totalReceived">₹0</div>
+            <div class="card-sub">Salary + transfers</div>
+          </div>
+          <div class="card red">
+            <div class="card-label">Spendings</div>
+            <div class="card-value" id="totalSpent">₹0</div>
+            <div class="card-sub" id="txCount">— transactions</div>
+          </div>
+          <div class="card" style="border-left:4px solid #84cc16">
+            <div class="card-label">Savings</div>
+            <div class="card-value" id="totalSavings" style="color:#84cc16">₹0</div>
+            <div class="card-sub" id="savingsCount">— transfers</div>
+          </div>
+          <!-- Row 2: Balance context -->
+          <div class="card" style="border-left:4px solid #6366f1">
+            <div class="card-label">Opening Balance</div>
+            <div class="card-value" id="openingBalance" style="color:#818cf8">₹0</div>
+            <div class="card-sub" id="openingCardSub">Start of cycle</div>
+          </div>
+          <div class="card blue">
+            <div class="card-label">Closing Balance</div>
+            <div class="card-value" id="closingBalance">₹0</div>
+            <div class="card-sub" id="closingCardSub"></div>
+            <div class="card-reconcile" id="closingReconcile"></div>
+          </div>
+          <div class="card yellow">
+            <div class="card-label">Biggest Spend</div>
+            <div class="card-value" id="biggestSpend">₹0</div>
+            <div class="card-sub" id="biggestDesc">—</div>
+          </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="charts-row">
+          <div class="chart-box">
+            <h3>Spending by Category</h3>
+            <canvas id="pieChart"></canvas>
+            <div id="pieLegend"></div>
+          </div>
+          <div class="chart-box wide">
+            <h3 id="barChartTitle">Daily Spending</h3>
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <!-- TOP MERCHANTS -->
+        <div class="section-box">
+          <h3>🏪 Top Merchants</h3>
+          <div id="topMerchants" class="merchant-list"></div>
+        </div>
+
+        <!-- AI INSIGHTS -->
+        <div class="section-box ai-insights-box">
+          <div class="ai-insights-header">
+            <h3>🤖 Spending Insights</h3>
+            <button class="btn" id="aiInsightsBtn" onclick="generateAIInsights()">✨ Analyse</button>
+          </div>
+          <div id="aiInsightsOutput" class="ai-output">
+            Click "Analyse" to get a smart summary of your spending habits.
+          </div>
+        </div>
+      </section>
+
+      <!-- TRANSACTIONS TAB -->
+      <section id="tab-transactions" class="tab">
+        <div class="page-header">
+          <h1>All Transactions</h1>
+          <div class="filters">
+            <select id="catFilter">
+              <option value="">All Categories</option>
+              <option>Food & Dining</option>
+              <option>Travel & Transport</option>
+              <option>Shopping</option>
+              <option>Bills & Utilities</option>
+              <option>Health</option>
+              <option>Entertainment</option>
+              <option>Cash Withdrawal</option>
+              <option>Loan Repayment</option>
+              <option>Lending</option>
+              <option>Savings</option>
+              <option>Income</option>
+              <option>Others</option>
+              <option>Pass-through</option>
+            </select>
+            <select id="typeFilter">
+              <option value="">All Types</option>
+              <option value="debit">Debit</option>
+              <option value="credit">Credit</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="txTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody id="txBody"></tbody>
+            <tfoot id="txFoot">
+              <tr>
+                <td colspan="2" id="txCount"></td>
+                <td></td>
+                <td id="txAmounts"></td>
+                <td id="txNet"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <!-- BUDGET TAB -->
+      <section id="tab-budget" class="tab">
+        <div class="page-header">
+          <h1>50 / 30 / 20 Budget</h1>
+          <span class="badge" id="budgetPeriodBadge">Monthly</span>
+        </div>
+
+        <!-- INCOME ROW -->
+        <div class="budget-income-row">
+          <div class="budget-income-info">
+            <span class="budget-income-label">Monthly Income</span>
+            <span class="budget-income-value" id="budgetIncome">₹0</span>
+          </div>
+          <div class="budget-income-override">
+            <input type="number" id="incomeOverride" placeholder="Override income ₹" />
+            <button class="budget-save-btn" onclick="setIncomeOverride()">Set</button>
+            <button class="budget-save-btn" style="background:var(--surface2);color:var(--muted)" onclick="clearIncomeOverride()">Auto</button>
+          </div>
+        </div>
+
+        <!-- THREE BUCKET CARDS -->
+        <div id="budgetBuckets" class="budget-buckets"></div>
+      </section>
+
+      <!-- IMPORT TAB -->
+      <section id="tab-import" class="tab">
+        <div class="page-header">
+          <h1>Import Data</h1>
+          <span class="badge">Paste SMS or Upload CSV</span>
+        </div>
+        <div class="import-box">
+          <h3>📋 Paste Bank SMS / Transaction Text</h3>
+          <textarea id="smsInput" placeholder="Paste your bank SMS messages here, one per line...&#10;&#10;Example:&#10;Dear Customer, Rs.202.81 debited from a/c for UPI/ZOMATO on 05-Jan-2026."></textarea>
+          <button class="btn" onclick="parseSMS()">🤖 Auto Parse with AI</button>
+          <div id="parseResult" class="parse-result"></div>
+        </div>
+        <div class="import-box">
+          <h3>📂 Upload Bank Statement (CSV)</h3>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Supports Standard Chartered format: Date, Transaction, Currency, Deposit, Withdrawal, Running Balance</p>
+          <input type="file" id="csvFile" accept=".csv" />
+          <button class="btn" onclick="uploadCSV()">Upload & Parse</button>
+          <div id="csvResult" class="parse-result"></div>
+        </div>
+        <div class="import-box" id="autoSaveBox">
+          <h3>💾 Auto-Save to Disk</h3>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;">Connect your <code>data/</code> folder once — every change (categories and new CSV imports) will save automatically to <code>app-data.js</code> on disk. No manual steps needed.</p>
+          <div id="autoSaveStatus" style="margin-bottom:12px;font-size:0.85rem;color:var(--muted)">Not connected</div>
+          <button class="btn" onclick="connectDataFolder()">📁 Connect Data Folder</button>
+        </div>
+        <div class="import-box">
+          <h3>📦 Backup & Restore</h3>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;">Manual backup — download everything as a single JSON file. Use to restore on a new device or browser.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" onclick="exportBackup()">⬇️ Download Backup</button>
+            <label class="btn" style="cursor:pointer">
+              ⬆️ Restore from Backup
+              <input type="file" id="backupFile" accept=".json" style="display:none" onchange="importBackup(this.files[0])"/>
+            </label>
+          </div>
+          <div id="backupResult" class="parse-result"></div>
+        </div>
+        <div class="import-box" style="border-color:#ef444440">
+          <h3>🗑️ Reset Browser Data</h3>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Clears all cached data from browser storage. Do this if something looks wrong, then re-import your CSV or restore from backup.</p>
+          <button class="btn" style="background:#ef444420;color:#ef4444;border:1px solid #ef444440" onclick="clearAllBrowserData()">Clear All Cached Data</button>
+        </div>
+      </section>
+
+      <!-- FINAI TAB -->
+      <section id="tab-finai" class="tab">
+        <div class="page-header">
+          <h1>FinAI ✨</h1>
+          <span class="badge">AI Finance Manager</span>
+        </div>
+
+        <!-- API Key setup -->
+        <div id="finaiKeySetup" class="finai-key-setup" style="display:none">
+          <div class="finai-key-box">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:6px">Set up Gemini API Key</div>
+            <div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">Get a free key at <strong>aistudio.google.com</strong> → Get API key. Stored only in your browser.</div>
+            <div style="display:flex;gap:8px">
+              <input type="password" id="finaiKeyInput" class="asset-inline-input" placeholder="AIza..." style="flex:1;font-family:monospace" />
+              <button class="asset-save-btn" onclick="saveFinAIKey()">Save key</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat area -->
+        <div id="finaiChatArea" class="finai-chat-area" style="display:none">
+          <div class="finai-messages" id="finaiMessages"></div>
+          <div class="finai-suggestions" id="finaiSuggestions"></div>
+          <div class="finai-input-row">
+            <input type="text" id="finaiInput" class="finai-input" placeholder="Ask FinAI anything about your finances…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendToFinAI()}" />
+            <button class="finai-send-btn" onclick="sendToFinAI()" id="finaiSendBtn">Send</button>
+            <button class="finai-clear-btn" onclick="clearFinAIChat()" title="Clear chat">✕</button>
+          </div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;text-align:center">
+            Powered by Gemini · <a href="#" onclick="resetFinAIKey()" style="color:var(--muted)">Change API key</a>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="finai.js"></script>
+  <script src="data/app-data.js"></script>
+  <script src="data/all-data.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>
